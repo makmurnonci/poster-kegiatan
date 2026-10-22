@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Poster Kegiatan</title>
+<style>
+:root{--bg:#f4f1fb;--card:#fff;--tx:#2a1f4d;--mut:#6b6290;--pri:#5b3f8f;--ln:#ddd5f0;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1530;--card:#262042;--tx:#efeaff;--mut:#a79cd0;--pri:#9b7fe0;--ln:#3b3360;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1530;--card:#262042;--tx:#efeaff;--mut:#a79cd0;--pri:#9b7fe0;--ln:#3b3360;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 14px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input[type=text],input[type=date]{width:100%;padding:11px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--tx);font-size:16px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{flex:none;padding:9px 14px;border-radius:20px;background:var(--bg);color:var(--tx);border:1.5px solid var(--ln);font-size:15px;font-weight:600}.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}.slotw{display:flex;flex-direction:column;gap:6px}.slotw .row button{padding:9px;font-size:14px}.slots{margin-top:12px}.slot{position:relative;aspect-ratio:4/3;border:2px dashed var(--ln);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;color:var(--mut);cursor:pointer;background:var(--bg)}
+.slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row{display:flex;gap:10px}
+button{flex:1;padding:14px;border:0;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;background:var(--pri);color:#fff}
+button.wa{background:#1fa855}
+button.sec{background:transparent;color:var(--pri);border:1.5px solid var(--pri)}
+canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--ln);display:block}
+.hint{font-size:13px;color:var(--mut);margin:8px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Poster Kegiatan</h1>
+
+<div class="card">
+<label style="margin-top:0">Jumlah foto</label>
+<div class="chips" id="jml"></div>
+<label>Model bingkai</label>
+<div class="chips" id="bing"></div>
+<div class="slots" id="slots"></div>
+<button class="sec" id="multi" style="margin-top:10px;width:100%">Pilih banyak foto sekaligus dari galeri</button>
+<input type="file" accept="image/*" multiple id="multiIn" hidden>
+<p class="hint">Tiap kotak punya tombol Kamera (foto langsung) dan Galeri.</p>
+</div>
+
+<div class="card">
+<label>Judul kegiatan</label>
+<input type="text" id="judul" placeholder="Contoh: Rapat Koordinasi">
+<label>Sub judul</label>
+<input type="text" id="sub" placeholder="Contoh: Semester II Tahun 2026">
+<label>Tempat</label>
+<input type="text" id="tempat" placeholder="Contoh: Ruang Rapat Utama">
+<label>Tanggal</label>
+<input type="date" id="tgl">
+<label>Teks logo (kiri bawah)</label>
+<input type="text" id="logo" placeholder="Contoh: nama instansi">
+<label>Warna tema</label>
+<input type="color" id="warna" value="#5b3f8f" style="width:100%;height:44px;border:0;background:none">
+</div>
+
+<div class="card">
+<canvas id="c" width="1080" height="1350"></canvas>
+<div class="row" style="margin-top:12px">
+<button class="wa" id="share">Kirim ke WhatsApp</button>
+<button class="sec" id="dl">Simpan</button>
+</div>
+<p class="hint">Tombol hijau membuka menu bagikan HP, pilih WhatsApp. Jika tidak muncul, tekan Simpan lalu kirim dari galeri.</p>
+</div>
+</main>
+
+<script>
+(function(){
+var cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=1080,H=1350;
+var imgs=[null,null,null,null,null],N=3,STYLE='putih';
+var $=function(id){return document.getElementById(id)};
+var BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+var HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+var LAY={
+1:[[20,20,1040,1310]],
+2:[[20,20,1040,648],[20,682,1040,648]],
+3:[[20,20,1040,760],[20,794,513,536],[547,794,513,536]],
+4:[[20,20,513,648],[547,20,513,648],[20,682,513,648],[547,682,513,648]],
+5:[[20,20,513,620],[547,20,513,620],[20,654,338,676],[371,654,338,676],[722,654,338,676]]};
+function chips(id,items,cur,fn){
+ var el=$(id);el.innerHTML='';
+ items.forEach(function(it){var b=document.createElement('button');b.className='chip'+(it[0]==cur?' on':'');b.textContent=it[1];
+  b.onclick=function(){fn(it[0]);chips(id,items,it[0],fn)};el.appendChild(b)});
+}
+function fmtTgl(){
+ var v=$('tgl').value; if(!v) return '';
+ var p=v.split('-'),dt=new Date(+p[0],+p[1]-1,+p[2]);
+ return (HARI[dt.getDay()]+', '+dt.getDate()+' '+BULAN[dt.getMonth()]+' '+dt.getFullYear()).toUpperCase();
+}
+function shade(hex,amt){
+ var n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;
+ r=Math.max(0,Math.min(255,r+amt));g=Math.max(0,Math.min(255,g+amt));b=Math.max(0,Math.min(255,b+amt));
+ return 'rgb('+r+','+g+','+b+')';
+}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function cover(img,x,y,w,h){
+ var s=Math.max(w/img.width,h/img.height),sw=w/s,sh=h/s;
+ ctx.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,x,y,w,h);
+}
+function photo(i,x,y,w,h,rad){
+ ctx.save();rr(x,y,w,h,rad);ctx.clip();
+ if(imgs[i])cover(imgs[i],x,y,w,h);
+ else{ctx.fillStyle='#e6e0f5';ctx.fillRect(x,y,w,h);ctx.fillStyle='#8a7fb5';ctx.font='32px sans-serif';ctx.textAlign='center';ctx.fillText('Foto '+(i+1),x+w/2,y+h/2)}
+ ctx.restore();
+}
+function rgba(hex,al){var n=parseInt(hex.slice(1),16);return 'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+al+')'}
+function lines(text,maxW,size){
+ ctx.font='800 '+size+'px "Arial Black",Impact,system-ui,sans-serif';
+ var words=text.split(' '),line='',out=[];
+ words.forEach(function(w){var t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w}else line=t});
+ if(line)out.push(line);return out;
+}
+function draw(){
+ var c=$('warna').value,rad=STYLE=='bulat'?40:0;
+ ctx.fillStyle=STYLE=='warna'?c:'#fff';ctx.fillRect(0,0,W,H);
+ LAY[N].forEach(function(r,i){photo(i,r[0],r[1],r[2],r[3],rad)});
+ var jud=$('judul').value.toUpperCase(),sub=$('sub').value.toUpperCase(),tp=$('tempat').value.toUpperCase(),tg=fmtTgl();
+ var pill=!!($('tempat').value||$('tgl').value);
+ if(jud||sub||pill){
+  var g=ctx.createLinearGradient(0,H-560,0,H);
+  g.addColorStop(0,rgba(shade(c,-70).replace(/[^\d,]/g,'').split(',').length?'#'+shade(c,-70).match(/\d+/g).map(function(v){return ('0'+(+v).toString(16)).slice(-2)}).join(''):c,0));
+  g.addColorStop(1,rgba('#'+shade(c,-70).match(/\d+/g).map(function(v){return ('0'+(+v).toString(16)).slice(-2)}).join(''),.93));
+  ctx.save();if(rad){rr(20,20,1040,1310,rad);ctx.clip()}ctx.fillStyle=g;ctx.fillRect(0,H-560,W,560);ctx.restore();
+ }
+ ctx.textAlign='center';ctx.textBaseline='alphabetic';
+ var ph=100,py=H-ph-44,bottom=pill?py:H-44;
+ if(pill){
+  ctx.fillStyle='#fff';rr(110,py,860,ph,30);ctx.fill();ctx.fillStyle=shade(c,-20);
+  var ts=28;ctx.font='700 28px system-ui,Arial,sans-serif';
+  while(ctx.measureText(tp).width>800&&ts>16){ts--;ctx.font='700 '+ts+'px system-ui,Arial,sans-serif'}
+  ctx.fillText(tp,W/2,py+(tg?38:62));
+  var tz=38;ctx.font='900 38px "Arial Black",Impact,system-ui,sans-serif';
+  while(ctx.measureText(tg).width>800&&tz>20){tz--;ctx.font='900 '+tz+'px "Arial Black",Impact,system-ui,sans-serif'}
+  ctx.fillText(tg,W/2,py+(tp?82:62));
+ }
+ ctx.fillStyle='#fff';ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=10;
+ var ln=sub?lines(sub,960,40):[],last=bottom-30,y0=last-(ln.length-1)*46;
+ if(ln.length){ctx.font='800 40px "Arial Black",Impact,system-ui,sans-serif';ln.forEach(function(l,i){ctx.fillText(l,W/2,y0+i*46)})}
+ if(jud){
+  var s2=76;ctx.font='900 76px "Arial Black",Impact,system-ui,sans-serif';
+  while(ctx.measureText(jud).width>980&&s2>24){s2-=2;ctx.font='900 '+s2+'px "Arial Black",Impact,system-ui,sans-serif'}
+  ctx.fillText(jud,W/2,ln.length?y0-64:last);
+ }
+ ctx.shadowColor='transparent';ctx.shadowBlur=0;
+ var lg=$('logo').value.toUpperCase();
+ if(lg){ctx.font='900 28px system-ui,Arial,sans-serif';var lw=ctx.measureText(lg).width+44;
+  ctx.fillStyle='rgba(255,255,255,.92)';rr(44,44,lw,56,28);ctx.fill();ctx.fillStyle=c;ctx.textAlign='left';ctx.fillText(lg,66,83)}
+}
+function setImg(i,file,cb){
+ var u=URL.createObjectURL(file),im=new Image();
+ im.onload=function(){imgs[i]=im;if(cb)cb();};im.src=u;
+}
+function mkInput(i,cam){
+ var f=document.createElement('input');f.type='file';f.accept='image/*';if(cam)f.setAttribute('capture','environment');f.hidden=true;
+ f.onchange=function(){if(f.files[0])setImg(i,f.files[0],function(){slots();draw()})};return f;
+}
+function slots(){
+ var box=$('slots');box.innerHTML='';
+ for(var i=0;i<N;i++){(function(i){
+  var w=document.createElement('div');w.className='slotw';
+  var s=document.createElement('div');s.className='slot';s.textContent='Foto '+(i+1);
+  if(imgs[i]){s.textContent='';var t=document.createElement('img');t.src=imgs[i].src;s.appendChild(t)}
+  var row=document.createElement('div');row.className='row';
+  var k=document.createElement('button');k.textContent='Kamera';var g=document.createElement('button');g.className='sec';g.textContent='Galeri';
+  var fk=mkInput(i,true),fg=mkInput(i,false);
+  k.onclick=function(){fk.click()};g.onclick=function(){fg.click()};s.onclick=function(){fg.click()};
+  row.appendChild(k);row.appendChild(g);w.appendChild(s);w.appendChild(row);w.appendChild(fk);w.appendChild(fg);box.appendChild(w);
+ })(i)}
+}
+$('multi').onclick=function(){$('multiIn').click()};
+$('multiIn').onchange=function(e){
+ var fs=Array.prototype.slice.call(e.target.files,0,5);if(!fs.length)return;
+ N=Math.max(1,Math.min(5,fs.length));chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],N,setN);
+ var left=fs.length;fs.forEach(function(f,i){setImg(i,f,function(){if(--left==0){slots();draw()}})});
+};
+function setN(n){N=n;slots();draw()}
+chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],N,setN);
+chips('bing',[['putih','Putih'],['bulat','Bulat'],['warna','Warna tema']],STYLE,function(v){STYLE=v;draw()});
+['judul','sub','tempat','tgl','logo','warna'].forEach(function(id){$(id).addEventListener('input',draw)});
+function blob(cb){cv.toBlob(cb,'image/jpeg',.92)}
+$('dl').addEventListener('click',function(){
+ blob(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='poster-'+Date.now()+'.jpg';document.body.appendChild(a);a.click();a.remove()});
+});
+$('share').addEventListener('click',function(){
+ blob(function(b){
+  var file=new File([b],'poster.jpg',{type:'image/jpeg'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:$('judul').value}).catch(function(){})}
+  else{$('dl').click();alert('Gambar disimpan. Buka WhatsApp lalu kirim dari galeri.')}
+ });
+});
+slots();draw();
+})();
+</script>
+</body>
+</html>
