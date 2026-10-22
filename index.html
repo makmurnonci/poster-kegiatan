@@ -44,6 +44,14 @@ canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--ln);disp
 </div>
 
 <div class="card">
+<label style="margin-top:0">Logo di atas kertas (pemerintah / organisasi)</label>
+<div class="row"><button class="sec" id="lg1">Pilih logo 1</button><button class="sec" id="lg2">Pilih logo 2</button></div>
+<button class="sec" id="lgx" style="margin-top:8px;width:100%">Hapus semua logo</button>
+<input type="file" accept="image/*" id="lgi1" hidden><input type="file" accept="image/*" id="lgi2" hidden>
+<p class="hint">Boleh 1 atau 2 logo. Paling rapi memakai gambar PNG berlatar transparan.</p>
+</div>
+
+<div class="card">
 <label>Judul kegiatan</label>
 <input type="text" id="judul" placeholder="Contoh: Rapat Koordinasi">
 <label>Sub judul</label>
@@ -52,7 +60,7 @@ canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--ln);disp
 <input type="text" id="tempat" placeholder="Contoh: Ruang Rapat Utama">
 <label>Tanggal</label>
 <input type="date" id="tgl">
-<label>Teks logo (kiri bawah)</label>
+<label>Teks kecil di paling bawah</label>
 <input type="text" id="logo" placeholder="Contoh: nama instansi">
 <label>Warna tema</label>
 <input type="color" id="warna" value="#5b3f8f" style="width:100%;height:44px;border:0;background:none">
@@ -75,12 +83,16 @@ var imgs=[null,null,null,null,null],N=3,STYLE='putih';
 var $=function(id){return document.getElementById(id)};
 var BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 var HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-var LAY={
-1:[[20,20,1040,1030]],
-2:[[20,20,1040,508],[20,542,1040,508]],
-3:[[20,20,1040,550],[20,584,513,466],[547,584,513,466]],
-4:[[20,20,513,508],[547,20,513,508],[20,542,513,508],[547,542,513,508]],
-5:[[20,20,513,480],[547,20,513,480],[20,514,338,536],[371,514,338,536],[722,514,338,536]]};
+function getLay(n,T){
+ var g=14,y0=T?T+20:20,ah=1050-y0,h2=(ah-g)/2,t3=Math.round(ah*.54),t5=Math.round(ah*.47);
+ if(n==1)return [[20,y0,1040,ah]];
+ if(n==2)return [[20,y0,1040,h2],[20,y0+h2+g,1040,h2]];
+ if(n==3)return [[20,y0,1040,t3],[20,y0+t3+g,513,ah-t3-g],[547,y0+t3+g,513,ah-t3-g]];
+ if(n==4)return [[20,y0,513,h2],[547,y0,513,h2],[20,y0+h2+g,513,h2],[547,y0+h2+g,513,h2]];
+ var b=ah-t5-g,yy=y0+t5+g;
+ return [[20,y0,513,t5],[547,y0,513,t5],[20,yy,338,b],[371,yy,338,b],[722,yy,338,b]];
+}
+var logos=[null,null];
 function chips(id,items,cur,fn){
  var el=$(id);el.innerHTML='';
  items.forEach(function(it){var b=document.createElement('button');b.className='chip'+(it[0]==cur?' on':'');b.textContent=it[1];
@@ -117,7 +129,14 @@ function lines(text,maxW,size){
 function draw(){
  var c=$('warna').value,rad=STYLE=='bulat'?40:0;
  ctx.fillStyle=STYLE=='warna'?c:'#fff';ctx.fillRect(0,0,W,H);
- LAY[N].forEach(function(r,i){photo(i,r[0],r[1],r[2],r[3],rad)});
+ var L=logos.filter(Boolean),T=L.length?150:0;
+ getLay(N,T).forEach(function(r,i){photo(i,r[0],r[1],r[2],r[3],rad)});
+ if(T){
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,T-6);ctx.fillStyle=c;ctx.fillRect(0,T-6,W,6);
+  var xs=L.length==1?[W/2]:[270,810];
+  L.forEach(function(im,k){var sc=Math.min(340/im.width,104/im.height),w=im.width*sc,h=im.height*sc;
+   ctx.drawImage(im,xs[k]-w/2,(T-6)/2-h/2,w,h)});
+ }
  ctx.fillStyle=c;ctx.fillRect(0,1070,W,H-1070);
  var jud=$('judul').value.toUpperCase(),sub=$('sub').value.toUpperCase(),tp=$('tempat').value.toUpperCase(),tg=fmtTgl(),lg=$('logo').value.toUpperCase();
  var pill=!!($('tempat').value||$('tgl').value);
@@ -169,6 +188,9 @@ $('multiIn').onchange=function(e){
  N=Math.max(1,Math.min(5,fs.length));chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],N,setN);
  var left=fs.length;fs.forEach(function(f,i){setImg(i,f,function(){if(--left==0){slots();draw()}})});
 };
+function setLogo(i,f){var u=URL.createObjectURL(f),im=new Image();im.onload=function(){logos[i]=im;$('lg'+(i+1)).textContent='Logo '+(i+1)+' terpasang';draw()};im.src=u}
+[1,2].forEach(function(n){$('lg'+n).onclick=function(){$('lgi'+n).click()};$('lgi'+n).onchange=function(){if(this.files[0])setLogo(n-1,this.files[0])}});
+$('lgx').onclick=function(){logos=[null,null];$('lg1').textContent='Pilih logo 1';$('lg2').textContent='Pilih logo 2';draw()};
 function setN(n){N=n;slots();draw()}
 chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],N,setN);
 chips('bing',[['putih','Putih'],['bulat','Bulat'],['warna','Warna tema']],STYLE,function(v){STYLE=v;draw()});
