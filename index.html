@@ -48,6 +48,10 @@ canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--ln);disp
 <div class="row"><button class="sec" id="lg1">Pilih logo 1</button><button class="sec" id="lg2">Pilih logo 2</button></div>
 <button class="sec" id="lgx" style="margin-top:8px;width:100%">Hapus semua logo</button>
 <input type="file" accept="image/*" id="lgi1" hidden><input type="file" accept="image/*" id="lgi2" hidden>
+<label>Tulisan di bawah logo, baris 1</label>
+<input type="text" id="hdr1" placeholder="Contoh: Pemerintah Kota Parepare">
+<label>Tulisan di bawah logo, baris 2 (nama dinas/kantor)</label>
+<input type="text" id="hdr2" placeholder="Contoh: Dinas Komunikasi dan Informatika">
 <p class="hint">Boleh 1 atau 2 logo. Paling rapi memakai gambar PNG berlatar transparan.</p>
 </div>
 
@@ -60,8 +64,6 @@ canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--ln);disp
 <input type="text" id="tempat" placeholder="Contoh: Ruang Rapat Utama">
 <label>Tanggal</label>
 <input type="date" id="tgl">
-<label>Teks kecil di paling bawah</label>
-<input type="text" id="logo" placeholder="Contoh: nama instansi">
 <label>Warna tema</label>
 <input type="color" id="warna" value="#5b3f8f" style="width:100%;height:44px;border:0;background:none">
 </div>
@@ -129,16 +131,26 @@ function lines(text,maxW,size){
 function draw(){
  var c=$('warna').value,rad=STYLE=='bulat'?40:0;
  ctx.fillStyle=STYLE=='warna'?c:'#fff';ctx.fillRect(0,0,W,H);
- var L=logos.filter(Boolean),T=L.length?150:0;
+ var L=logos.filter(Boolean),hd=[$('hdr1').value.toUpperCase(),$('hdr2').value.toUpperCase()].filter(Boolean);
+ var T=(L.length||hd.length)?16+(L.length?100:0)+hd.length*38+20:0;
  getLay(N,T).forEach(function(r,i){photo(i,r[0],r[1],r[2],r[3],rad)});
  if(T){
   ctx.fillStyle='#fff';ctx.fillRect(0,0,W,T-6);ctx.fillStyle=c;ctx.fillRect(0,T-6,W,6);
-  var xs=L.length==1?[W/2]:[270,810];
-  L.forEach(function(im,k){var sc=Math.min(340/im.width,104/im.height),w=im.width*sc,h=im.height*sc;
-   ctx.drawImage(im,xs[k]-w/2,(T-6)/2-h/2,w,h)});
+  var cy=16;
+  if(L.length){
+   var xs=L.length==1?[W/2]:[270,810];
+   L.forEach(function(im,k){var sc=Math.min(340/im.width,90/im.height),w=im.width*sc,h=im.height*sc;ctx.drawImage(im,xs[k]-w/2,cy+45-h/2,w,h)});
+   cy+=100;
+  }
+  ctx.textAlign='center';ctx.fillStyle=shade(c,-30);
+  hd.forEach(function(t,k){
+   var z=k?28:32,wt=k?'800':'900',f=function(){ctx.font=wt+' '+z+'px "Arial Black",Impact,system-ui,sans-serif'};f();
+   while(ctx.measureText(t).width>1000&&z>16){z-=2;f()}
+   ctx.fillText(t,W/2,cy+28+k*38);
+  });
  }
  ctx.fillStyle=c;ctx.fillRect(0,1070,W,H-1070);
- var jud=$('judul').value.toUpperCase(),sub=$('sub').value.toUpperCase(),tp=$('tempat').value.toUpperCase(),tg=fmtTgl(),lg=$('logo').value.toUpperCase();
+ var jud=$('judul').value.toUpperCase(),sub=$('sub').value.toUpperCase(),tp=$('tempat').value.toUpperCase(),tg=fmtTgl(),lg='';
  var pill=!!($('tempat').value||$('tgl').value);
  ctx.textAlign='center';ctx.textBaseline='alphabetic';
  var ph=84,py=H-ph-(lg?50:30),bottom=pill?py:H-(lg?50:30);
@@ -194,7 +206,7 @@ $('lgx').onclick=function(){logos=[null,null];$('lg1').textContent='Pilih logo 1
 function setN(n){N=n;slots();draw()}
 chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],N,setN);
 chips('bing',[['putih','Putih'],['bulat','Bulat'],['warna','Warna tema']],STYLE,function(v){STYLE=v;draw()});
-['judul','sub','tempat','tgl','logo','warna'].forEach(function(id){$(id).addEventListener('input',draw)});
+['judul','sub','tempat','tgl','hdr1','hdr2','warna'].forEach(function(id){$(id).addEventListener('input',draw)});
 function blob(cb){cv.toBlob(cb,'image/jpeg',.92)}
 $('dl').addEventListener('click',function(){
  blob(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='poster-'+Date.now()+'.jpg';document.body.appendChild(a);a.click();a.remove()});
