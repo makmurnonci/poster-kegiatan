@@ -91,7 +91,7 @@ canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--ln);disp
 <script>
 (function(){
 var cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=1080,H=1350;
-var imgs=[null,null,null,null,null],N=3,STYLE='putih';
+var imgs=[null,null,null,null,null],N=4,STYLE='putih';
 var $=function(id){return document.getElementById(id)};
 var BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 var HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -106,7 +106,7 @@ function getLay2(n,x0,w,y0,y1){
  var tw=(w-2*g)/3,b=ah-t5-g,yy=y0+t5+g;
  return [[x0,y0,hw,t5],[x1,y0,hw,t5],[x0,yy,tw,b],[x0+tw+g,yy,tw,b],[x0+2*(tw+g),yy,tw,b]];
 }
-var logos=[null,null],MODE='p';
+var logos=[null,null],MODE='l';
 function chips(id,items,cur,fn){
  var el=$(id);el.innerHTML='';
  items.forEach(function(it){var b=document.createElement('button');b.className='chip'+(it[0]==cur?' on':'');b.textContent=it[1];
