@@ -89,7 +89,7 @@ canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--ln);disp
 <script>
 (function(){
 var cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=1080,H=1350;
-var imgs=[null,null,null,null,null],N=4,STYLE='putih';
+var imgs=[null,null,null,null,null,null,null,null],N=4,STYLE='putih';
 var $=function(id){return document.getElementById(id)};
 var BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 var HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -101,6 +101,8 @@ function getLay2(n,x0,w,y0,y1){
  if(n==3){if(wide){var lw=Math.round((w-g)/2),xr=x0+lw+g,rw=w-lw-g;return [[x0,y0,lw,ah],[xr,y0,rw,h2],[xr,y0+h2+g,rw,h2]]}
   return [[x0,y0,w,t3],[x0,y0+t3+g,hw,ah-t3-g],[x1,y0+t3+g,hw,ah-t3-g]]}
  if(n==4)return [[x0,y0,hw,h2],[x1,y0,hw,h2],[x0,y0+h2+g,hw,h2],[x1,y0+h2+g,hw,h2]];
+ if(n>=6){var rows=n==6?(wide?[3,3]:[2,2,2]):n==7?(wide?[3,4]:[2,2,3]):(wide?[4,4]:[2,2,2,2]),rh=(ah-g*(rows.length-1))/rows.length,out=[];
+  rows.forEach(function(c,ri){var cw=(w-g*(c-1))/c;for(var k=0;k<c;k++)out.push([x0+k*(cw+g),y0+ri*(rh+g),cw,rh])});return out}
  var tw=(w-2*g)/3,b=ah-t5-g,yy=y0+t5+g;
  return [[x0,y0,hw,t5],[x1,y0,hw,t5],[x0,yy,tw,b],[x0+tw+g,yy,tw,b],[x0+2*(tw+g),yy,tw,b]];
 }
@@ -243,15 +245,15 @@ function slots(){
 }
 $('multi').onclick=function(){$('multiIn').click()};
 $('multiIn').onchange=function(e){
- var fs=Array.prototype.slice.call(e.target.files,0,5);if(!fs.length)return;
- N=Math.max(1,Math.min(5,fs.length));chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],N,setN);
+ var fs=Array.prototype.slice.call(e.target.files,0,8);if(!fs.length)return;
+ N=Math.max(1,Math.min(8,fs.length));chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7'],[8,'8']],N,setN);
  var left=fs.length;fs.forEach(function(f,i){setImg(i,f,function(){if(--left==0){slots();draw()}})});
 };
 function setLogo(i,f){var u=URL.createObjectURL(f),im=new Image();im.onload=function(){logos[i]=im;$('lg'+(i+1)).textContent='Logo '+(i+1)+' terpasang';draw()};im.src=u}
 [1,2].forEach(function(n){$('lg'+n).onclick=function(){$('lgi'+n).click()};$('lgi'+n).onchange=function(){if(this.files[0])setLogo(n-1,this.files[0])}});
 $('lgx').onclick=function(){logos=[null,null];$('lg1').textContent='Pilih logo 1';$('lg2').textContent='Pilih logo 2';draw()};
 function setN(n){N=n;slots();draw()}
-chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],N,setN);
+chips('jml',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7'],[8,'8']],N,setN);
 chips('mode',[['p','Poster tegak'],['l','Dokumentasi lanskap']],MODE,function(v){MODE=v;draw()});
 chips('bing',[['putih','Putih'],['bulat','Bulat'],['warna','Warna tema']],STYLE,function(v){STYLE=v;draw()});
 ['sub','tempat','tgl','hdr1','hdr2','ig','tt','fb','aks','warna'].forEach(function(id){$(id).addEventListener('input',draw)});
